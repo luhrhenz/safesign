@@ -1,0 +1,248 @@
+/*
+ * Hand-written CSS on purpose: no utility framework, no webfont, no icon set.
+ * The whole stylesheet is a few KB and needs one round trip on a slow network.
+ */
+
+:root {
+  --bg: #f7f8f7;
+  --surface: #ffffff;
+  --text: #14171a;
+  --muted: #5b636b;
+  --border: #dfe3e6;
+  --accent: #1a5cff;
+
+  --safe: #0b6b39;
+  --safe-bg: #e6f4ec;
+  --caution: #8a5200;
+  --caution-bg: #fdf1de;
+  --danger: #a4231b;
+  --danger-bg: #fbe9e7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101214;
+    --surface: #191c1f;
+    --text: #f2f4f5;
+    --muted: #a2abb3;
+    --border: #2c3135;
+    --accent: #6f9bff;
+
+    --safe: #6ee7a5;
+    --safe-bg: #0e2a1c;
+    --caution: #f5c469;
+    --caution-bg: #2e2313;
+    --danger: #ff9d94;
+    --danger-bg: #331613;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+header p {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+}
+
+/* ---- input ------------------------------------------------------------- */
+
+form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.75rem;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 0.7rem;
+  resize: vertical;
+  word-break: break-all;
+}
+
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  /* 3rem tall: a real thumb target on a small screen. */
+  min-height: 3rem;
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 0.7rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin-top: 1rem;
+  color: var(--danger);
+}
+
+/* ---- verdict ----------------------------------------------------------- */
+
+.verdict {
+  margin-top: 1.5rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.verdict-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.verdict-light {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.verdict-safe {
+  color: var(--safe);
+  background: var(--safe-bg);
+}
+
+.verdict-caution {
+  color: var(--caution);
+  background: var(--caution-bg);
+}
+
+.verdict-danger {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.verdict-body {
+  padding: 1rem;
+}
+
+.verdict-body ul {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+}
+
+.verdict-body li + li {
+  margin-top: 0.5rem;
+}
+
+.what-to-do {
+  margin: 0;
+  padding: 0.75rem;
+  font-weight: 600;
+  background: var(--bg);
+  border-radius: 0.6rem;
+}
+
+.subject {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.subject a {
+  color: var(--accent);
+}
+
+details {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+summary {
+  cursor: pointer;
+  color: var(--muted);
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+details ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+footer {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---- text pages (privacy, terms) --------------------------------------- */
+
+main h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+main > p {
+  color: var(--text);
+}
+
+footer p + p {
+  margin-top: 0.5rem;
+}
+
+footer a {
+  color: var(--accent);
+}
+
+.provenance {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

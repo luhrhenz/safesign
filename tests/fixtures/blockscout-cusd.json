@@ -1,0 +1,69 @@
+{
+  "name": "StableTokenProxy",
+  "is_verified": true,
+  "is_fully_verified": true,
+  "is_partially_verified": false,
+  "compiler_version": "0.5.8+commit.23d335f2",
+  "language": "solidity",
+  "proxy_type": "eip1967",
+  "file_path": "/Users/cocmb/celo-monorepo/packages/protocol/contracts/stability/proxies/StableTokenProxy.sol",
+  "source_code": "pragma solidity ^0.5.3;\n\nimport \"../../common/Proxy.sol\";\n\n/* solhint-disable no-empty-blocks */\ncontract StableTokenProxy is Proxy {}\n",
+  "additional_sources": [
+    {
+      "file_path": "/Users/cocmb/celo-monorepo/packages/protocol/contracts/common/Proxy.sol",
+      "source_code": "pragma solidity ^0.5.3;\n/* solhint-disable no-inline-assembly, no-complex-fallback, avoid-low-level-calls */\n\nimport \"openzeppelin-solidity/contracts/utils/Address.sol\";\n\n/**\n * @title A Proxy utilizi"
+    },
+    {
+      "file_path": "openzeppelin-solidity/contracts/utils/Address.sol",
+      "source_code": "pragma solidity ^0.5.5;\n\n/**\n * @dev Collection of functions related to the address type\n */\nlibrary Address {\n    /**\n     * @dev Returns true if `account` is a contract.\n     *\n     * [IMPORTANT]\n  "
+    }
+  ],
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        },
+        {
+          "name": "callbackData",
+          "type": "bytes"
+        }
+      ],
+      "name": "_setAndInitializeImplementation",
+      "outputs": [],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "_getImplementation",
+      "outputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "_setImplementation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

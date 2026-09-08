@@ -1,0 +1,74 @@
+{
+  "match": "match",
+  "creationMatch": null,
+  "runtimeMatch": "match",
+  "chainId": "42220",
+  "address": "0x1111111111111111111111111111111111111111",
+  "verifiedAt": "2024-08-08T14:06:14Z",
+  "sources": {
+    "openzeppelin-solidity/contracts/utils/Address.sol": {
+      "content": "pragma solidity ^0.5.5;\n\n/**\n * @dev Collection of functions related to the address type\n */\nlibrary Address {\n    /**\n     * @dev Returns true if `account` is a contract.\n     *\n     * [IMPORTANT]\n     * ====\n     * It is unsafe to assume that an address for which this function returns\n     * false is an externally-owned account (EOA) and not a contract.\n     *\n     * Among others, `isContract` w"
+    },
+    "/Users/cocmb/celo-monorepo/packages/protocol/contracts/common/Proxy.sol": {
+      "content": "pragma solidity ^0.5.3;\n/* solhint-disable no-inline-assembly, no-complex-fallback, avoid-low-level-calls */\n\nimport \"openzeppelin-solidity/contracts/utils/Address.sol\";\n\n/**\n * @title A Proxy utilizing the Unstructured Storage pattern.\n */\ncontract Proxy {\n  // Used to store the address of the owner.\n  bytes32 private constant OWNER_POSITION = bytes32(uint256(keccak256(\"eip1967.proxy.admin\")) - 1"
+    }
+  },
+  "compilation": {
+    "name": "PartiallyVerifiedToken",
+    "compilerVersion": "0.5.8+commit.23d335f2",
+    "language": "Solidity"
+  },
+  "abi": [
+    {
+      "name": "_setAndInitializeImplementation",
+      "type": "function",
+      "inputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        },
+        {
+          "name": "callbackData",
+          "type": "bytes"
+        }
+      ],
+      "outputs": [],
+      "payable": true,
+      "constant": false,
+      "stateMutability": "payable"
+    },
+    {
+      "name": "_getImplementation",
+      "type": "function",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "constant": true,
+      "stateMutability": "view"
+    },
+    {
+      "name": "_setImplementation",
+      "type": "function",
+      "inputs": [
+        {
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "outputs": [],
+      "payable": false,
+      "constant": false,
+      "stateMutability": "nonpayable"
+    }
+  ],
+  "proxyResolution": {
+    "isProxy": false,
+    "proxyType": null,
+    "implementations": []
+  }
+}

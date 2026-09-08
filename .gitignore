@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# secrets — never commit a real key. The template is the one exception.
+.env*
+!.env.example
+
+# build output
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
