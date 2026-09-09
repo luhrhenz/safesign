@@ -90,10 +90,11 @@ async function sampleMalicious(size: number): Promise<string[]> {
     { signal: AbortSignal.timeout(20_000) },
   );
   const all: string[] = await res.json();
-  // Most listed addresses are wallets, not contracts, so the candidate pool has
-  // to be far larger than the sample we want to end up with.
-  const step = Math.max(1, Math.floor(all.length / (size * 40)));
-  return all.filter((_, i) => i % step === 0).slice(0, size * 40);
+  // Most listed addresses are wallets, so the pool must be larger than the
+  // sample -- but not so large that public RPCs start rate-limiting us, which
+  // makes every address look like it has no code and silently empties the run.
+  const step = Math.max(1, Math.floor(all.length / (size * 15)));
+  return all.filter((_, i) => i % step === 0).slice(0, size * 15);
 }
 
 function table(rows: Row[]): string {
@@ -139,23 +140,27 @@ describe.runIf(process.env.SAFESIGN_BENCH === "1")("accuracy benchmark", () => {
       // ---- malicious, with the list switched off ----
       const candidates = await sampleMalicious(MALICIOUS_SAMPLE_SIZE);
       const bad: Row[] = [];
+      let examined = 0;
+
       for (const address of candidates) {
         if (bad.length >= MALICIOUS_SAMPLE_SIZE) break;
-        // Drainers concentrate on these two; checking four chains per address
-        // spends most of the run on wallets that have no code anywhere.
-        for (const chain of ["ethereum", "bsc"] as ChainKey[]) {
-          if (bad.length >= MALICIOUS_SAMPLE_SIZE) break;
-          try {
-            const row = await assess({ chain, address, label: `listed drainer` });
-            // Only count addresses that are actually contracts somewhere.
-            if (row.findings.includes("meta.not_a_contract")) continue;
-            bad.push(row);
-            break;
-          } catch {
-            continue;
-          }
+        examined++;
+        // Paced deliberately: hammering public RPCs gets us throttled, and a
+        // throttled eth_getCode is indistinguishable from "this is a wallet",
+        // which would quietly empty the sample and inflate the result.
+        await new Promise((r) => setTimeout(r, 120));
+        try {
+          // Drainers concentrate on Ethereum; one chain keeps the call budget
+          // inside what public nodes will serve.
+          const row = await assess({ chain: "ethereum", address, label: "listed drainer" });
+          if (row.findings.includes("meta.not_a_contract")) continue;
+          bad.push(row);
+        } catch {
+          continue;
         }
       }
+
+      console.log(`sampled ${bad.length} contracts from ${examined} listed addresses`);
 
       const flagged = bad.filter((r) => r.verdict !== "SAFE").length;
       const caughtByRulesAlone = bad.filter((r) =>
