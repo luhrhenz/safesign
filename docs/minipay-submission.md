@@ -29,6 +29,18 @@ Submission form: <https://developer.minipay.to/mini-app-listing>
 | PageSpeed Insights score | Pending deploy (needs a public URL) |
 | Full manifest of URLs, subdomains and origins used | Below |
 
+### Our stance, stated for the listing
+
+**SafeSign is read-only by design and intentionally requests no wallet access,
+consistent with its security purpose.** It never calls `eth_requestAccounts`,
+never shows a connect button, and never asks a user to approve anything. A tool
+whose entire message is "be careful what you approve" cannot itself ask to be
+approved — that would train the exact habit that gets people drained.
+
+The one-line MiniPay detection helper in `lib/minipay.ts` reads
+`window.ethereum.isMiniPay` to tag usage counts. It touches no accounts and
+requests no permissions. The connect fallback stays commented out and inactive.
+
 ### Note on the auto-connect rule
 
 The rule exists so users are not made to press "Connect wallet". SafeSign never
