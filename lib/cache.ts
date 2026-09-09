@@ -17,9 +17,14 @@ const TTL_SECONDS = 6 * 60 * 60;
 /** Bump when the shape of a cached verdict changes, to retire old entries. */
 const SCHEMA_VERSION = "v1";
 
-const memory = new Map<string, { value: CheckResponse; expiresAt: number }>();
+const memory = new Map<string, { value: unknown; expiresAt: number }>();
 /** Keeps a warm instance from growing without bound. */
 const MEMORY_MAX_ENTRIES = 500;
+
+/** Whether an address is a trading pair never changes, so it caches well. */
+export function pairCacheKey(chain: string, address: string): string {
+  return `safesign:${SCHEMA_VERSION}:pair:${chain}:${address}`;
+}
 
 export function cacheKey(parts: { chain?: string; address?: string; domain?: string }): string {
   return parts.address
@@ -27,10 +32,10 @@ export function cacheKey(parts: { chain?: string; address?: string; domain?: str
     : `safesign:${SCHEMA_VERSION}:link:${parts.domain}`;
 }
 
-export async function getCached(key: string): Promise<CheckResponse | null> {
+export async function getCached<T = CheckResponse>(key: string): Promise<T | null> {
   const local = memory.get(key);
   if (local) {
-    if (local.expiresAt > Date.now()) return local.value;
+    if (local.expiresAt > Date.now()) return local.value as T;
     memory.delete(key);
   }
 
@@ -47,7 +52,7 @@ export async function getCached(key: string): Promise<CheckResponse | null> {
     const data = await res.json();
     if (typeof data?.result !== "string") return null;
 
-    const value = JSON.parse(data.result) as CheckResponse;
+    const value = JSON.parse(data.result) as T;
     rememberLocally(key, value);
     return value;
   } catch {
@@ -55,7 +60,7 @@ export async function getCached(key: string): Promise<CheckResponse | null> {
   }
 }
 
-export async function setCached(key: string, value: CheckResponse): Promise<void> {
+export async function setCached<T = CheckResponse>(key: string, value: T): Promise<void> {
   rememberLocally(key, value);
 
   const rest = restConfig();
@@ -85,7 +90,7 @@ export function isCacheable(response: CheckResponse): boolean {
   return !response.findings.some((f) => f.id === "meta.source_unavailable") && !response.degraded;
 }
 
-function rememberLocally(key: string, value: CheckResponse): void {
+function rememberLocally(key: string, value: unknown): void {
   if (memory.size >= MEMORY_MAX_ENTRIES) {
     const oldest = memory.keys().next().value;
     if (oldest) memory.delete(oldest);
