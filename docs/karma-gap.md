@@ -69,7 +69,8 @@ submission.
 **Milestone 2 — Used by real people**
 500 checks from real users, with the verdict split published.
 *Evidence:* `/api/stats` totals, screenshots.
-*Status:* counters built and live-ready; awaiting deployment.
+*Status:* counters live and verified in production, backed by Redis. Awaiting
+real users.
 
 **Milestone 3 — Detection quality held honest**
 80% of sampled drainers caught by a real rule (currently 63%), false alarms

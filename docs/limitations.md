@@ -49,22 +49,18 @@ plainly is more useful than a green tick. But it does mean **CAUTION is a
 disclosure, not a warning**, and the interface has to keep making that
 difference obvious.
 
-## Usage counters need a KV store
+## Usage counting depends on a configured store
 
-The counters are written to the same KV as the verdict cache. With no KV
-configured they fall back to per-instance memory, and on serverless each request
-may land on a different instance — so `/api/stats` reports zeros no matter how
-many checks have run. Verified on the live deployment.
+Counters are written to Redis (Upstash, `us-east-1`, matching the Vercel
+function region `iad1`). Verified working in production: totals accumulate
+across separate serverless invocations, and repeat checks of the same address
+count once.
 
-Fix: any Redis with a REST API. Vercel's Marketplace does not surface a free
-tier, but signing up at upstash.com directly does — 500K commands a month, no
-card — and the code accepts either `KV_REST_API_URL` / `KV_REST_API_TOKEN` or
-`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`, so whichever names the
-provider hands you will work.
-
-At roughly six commands per check, the free tier covers about 80,000 checks a
-month. Until it is configured the per-check log line is the only record, and it
-rolls off.
+With no store configured they fall back to per-instance memory and serverless
+scatters them across instances, so `/api/stats` would report zeros no matter how
+much traffic ran. `GET /api/stats?probe=1` does a live write-read round trip and
+names the failure rather than hiding it — worth checking after any change to the
+environment.
 
 ## Coverage gaps
 
