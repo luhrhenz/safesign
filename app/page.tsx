@@ -1,18 +1,26 @@
 import Link from "next/link";
 import { Checker } from "@/components/Checker";
+import { Mark } from "@/components/icons";
 import { SUPPORT_URL, SUPPORTED_CHAIN_LABELS } from "@/lib/config";
 
 /**
- * Server-rendered shell — only the form and result hydrate on the client, so
- * the page is readable before any JavaScript arrives.
+ * Server-rendered shell — only the form and result hydrate, so the question and
+ * the input are on screen before any JavaScript arrives.
  */
 export default function Page() {
   return (
     <main>
-      <header>
-        <h1>Is this safe to sign?</h1>
-        <p>Paste a token, a contract, or a link. We check it before you do.</p>
+      <header className="masthead">
+        <Mark />
+        <span className="wordmark">
+          Safe<span>Sign</span>
+        </span>
       </header>
+
+      <h1 className="ask">Is this safe to sign?</h1>
+      <p className="standfirst">
+        Paste a token, a contract, or a link. We read the code before you agree to anything.
+      </p>
 
       <Checker />
 
