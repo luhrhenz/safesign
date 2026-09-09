@@ -8,16 +8,40 @@ import { buildVerdict, isAmbiguous, provenanceNotes } from "@/lib/verdict";
 import { cacheKey, getCached, isCacheable, setCached } from "@/lib/cache";
 import { rephrase, rephraseAvailable } from "@/lib/llm/callLLM";
 import { recordCheck, recordRejection } from "@/lib/analytics";
+import { callerKey, checkRateLimit } from "@/lib/rateLimit";
 import { isWellKnown } from "@/lib/wellKnown";
 import type { CheckContext, CheckResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+/**
+ * The longest input worth reading. A contract address is 42 characters and the
+ * longest plausible link is a few hundred; past this it is either a mistake or
+ * an attempt to make us do pointless work.
+ */
+const MAX_INPUT_LENGTH = 2_000;
+
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
+
+  const limit = checkRateLimit(callerKey(req.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "That is a lot of checks at once. Wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   const body = await req.json().catch(() => ({}));
   const raw = typeof body?.input === "string" ? body.input : "";
+
+  if (raw.length > MAX_INPUT_LENGTH) {
+    return NextResponse.json(
+      { error: "That is too long to be an address or a link." },
+      { status: 413 },
+    );
+  }
   const miniPay = body?.miniPay === true;
 
   const parsed = normalizeInput(raw);
