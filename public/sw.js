@@ -9,9 +9,19 @@
  * Bump CACHE when the shell changes; the old one is deleted on activate.
  */
 
-const CACHE = "safesign-shell-v1";
+const CACHE = "safesign-shell-v2";
 
 const SHELL = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+
+/** Our own static files. Content-hashed framework bundles are matched by prefix. */
+const IMMUTABLE_PATHS = new Set([
+  "/manifest.webmanifest",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/icon-maskable-512.png",
+  "/apple-touch-icon.png",
+  "/favicon.png",
+]);
 
 self.addEventListener("install", (event) => {
   // Take over straight away rather than waiting for every tab to close.
@@ -58,7 +68,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets are content-hashed by the framework, so a hit is always safe.
+  // Cache-first ONLY for things whose URL identifies their content: the
+  // framework's content-hashed bundles, and our own static icons.
+  //
+  // Everything else goes straight to the network. An earlier version cached any
+  // same-origin GET, which swallowed the framework's route prefetches -- they
+  // vary by header, so the same page piled up as several entries, and serving
+  // one back after a deploy would show content that no longer exists.
+  const immutable =
+    url.pathname.startsWith("/_next/static/") || IMMUTABLE_PATHS.has(url.pathname);
+
+  if (!immutable) return;
+
   event.respondWith(
     caches.match(request).then(
       (hit) =>
