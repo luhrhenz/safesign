@@ -56,9 +56,15 @@ configured they fall back to per-instance memory, and on serverless each request
 may land on a different instance — so `/api/stats` reports zeros no matter how
 many checks have run. Verified on the live deployment.
 
-Fix: add a Redis/KV store to the Vercel project and set `KV_REST_API_URL` and
-`KV_REST_API_TOKEN`. Until then the per-check log line is the only record, and
-it rolls off.
+Fix: any Redis with a REST API. Vercel's Marketplace does not surface a free
+tier, but signing up at upstash.com directly does — 500K commands a month, no
+card — and the code accepts either `KV_REST_API_URL` / `KV_REST_API_TOKEN` or
+`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`, so whichever names the
+provider hands you will work.
+
+At roughly six commands per check, the free tier covers about 80,000 checks a
+month. Until it is configured the per-check log line is the only record, and it
+rolls off.
 
 ## Coverage gaps
 

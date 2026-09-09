@@ -65,3 +65,33 @@ describe("durable counters", () => {
     expect(after.checks).toBe(before.checks);
   });
 });
+
+describe("counters do not expire", () => {
+  it("stores the totals with no TTL, unlike a verdict", async () => {
+    const writes: unknown[][] = [];
+    const original = globalThis.fetch;
+
+    // Stand in for Upstash so the command itself can be inspected.
+    process.env.KV_REST_API_URL = "https://kv.example";
+    process.env.KV_REST_API_TOKEN = "token";
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      if (init?.body) writes.push(JSON.parse(String(init.body)));
+      return new Response("{}", { status: 200 });
+    }) as unknown as typeof fetch;
+
+    try {
+      recordRejection("generic");
+      await countersSettled();
+
+      const setCommand = writes.find((w) => w[0] === "SET" && String(w[1]).includes("counters"));
+      expect(setCommand).toBeDefined();
+      // ["SET", key, value] with no "EX" — a verdict would have one.
+      expect(setCommand).toHaveLength(3);
+      expect(setCommand).not.toContain("EX");
+    } finally {
+      globalThis.fetch = original;
+      delete process.env.KV_REST_API_URL;
+      delete process.env.KV_REST_API_TOKEN;
+    }
+  });
+});

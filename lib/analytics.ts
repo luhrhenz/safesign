@@ -101,7 +101,8 @@ function bump(change: (c: Counters) => void): Promise<void> {
       counters.firstSeenAt ||= now;
       counters.lastSeenAt = now;
 
-      await setCached<Counters>(COUNTER_KEY, counters);
+      // No expiry: a running total that resets itself is worse than none.
+      await setCached<Counters>(COUNTER_KEY, counters, null);
     } catch {
       // Counting is never worth failing a safety check over.
     }

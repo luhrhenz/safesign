@@ -60,11 +60,28 @@ export async function getCached<T = CheckResponse>(key: string): Promise<T | nul
   }
 }
 
-export async function setCached<T = CheckResponse>(key: string, value: T): Promise<void> {
-  rememberLocally(key, value);
+/**
+ * `ttlSeconds: null` stores the value with no expiry.
+ *
+ * A verdict should go stale — the contract behind it can change. A running
+ * total should not: usage counters written with the verdict TTL would quietly
+ * reset themselves after six idle hours, which is worse than not counting at
+ * all, because the number would look real.
+ */
+export async function setCached<T = CheckResponse>(
+  key: string,
+  value: T,
+  ttlSeconds: number | null = TTL_SECONDS,
+): Promise<void> {
+  rememberLocally(key, value, ttlSeconds);
 
   const rest = restConfig();
   if (!rest) return;
+
+  const command =
+    ttlSeconds === null
+      ? ["SET", key, JSON.stringify(value)]
+      : ["SET", key, JSON.stringify(value), "EX", String(ttlSeconds)];
 
   try {
     await fetch(rest.url, {
@@ -73,7 +90,7 @@ export async function setCached<T = CheckResponse>(key: string, value: T): Promi
         Authorization: `Bearer ${rest.token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(["SET", key, JSON.stringify(value), "EX", String(TTL_SECONDS)]),
+      body: JSON.stringify(command),
       signal: AbortSignal.timeout(3000),
     });
   } catch {
@@ -90,12 +107,15 @@ export function isCacheable(response: CheckResponse): boolean {
   return !response.findings.some((f) => f.id === "meta.source_unavailable") && !response.degraded;
 }
 
-function rememberLocally(key: string, value: unknown): void {
+function rememberLocally(key: string, value: unknown, ttlSeconds: number | null = TTL_SECONDS): void {
   if (memory.size >= MEMORY_MAX_ENTRIES) {
     const oldest = memory.keys().next().value;
     if (oldest) memory.delete(oldest);
   }
-  memory.set(key, { value, expiresAt: Date.now() + TTL_SECONDS * 1000 });
+  memory.set(key, {
+    value,
+    expiresAt: ttlSeconds === null ? Number.POSITIVE_INFINITY : Date.now() + ttlSeconds * 1000,
+  });
 }
 
 function restConfig(): { url: string; token: string } | null {
