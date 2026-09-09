@@ -7,12 +7,29 @@ import { runChecks } from "../lib/checks";
 import { context, ids } from "./helpers";
 
 describe("honeypot rules", () => {
-  it("flags a blacklist mapping", () => {
+  it("flags a blacklist mapping as a power, not proof of a scam", () => {
     const findings = honeypotChecks(
       context({ source: "mapping(address => bool) private _blacklisted;" }),
     );
     expect(ids(findings)).toContain("honeypot.blacklist_mapping");
-    expect(findings[0].severity).toBe("high");
+    // USDT has exactly this. It is a capability, and capabilities never condemn.
+    expect(findings[0].kind).toBe("capability");
+  });
+
+  it("calls an owner-only transfer what it is: a fact", () => {
+    const findings = honeypotChecks(
+      context({
+        source: "function _transfer(address from, address to, uint256 v) internal { require(from == owner, 'no'); }",
+      }),
+    );
+    expect(ids(findings)).toContain("honeypot.transfers_owner_only");
+    expect(findings[0].kind).toBe("fact");
+  });
+
+  it("treats a near-total sell fee as a fact", () => {
+    const findings = honeypotChecks(context({ source: "uint256 public sellFee = 99;" }));
+    expect(ids(findings)).toContain("honeypot.total_sell_fee");
+    expect(findings[0].kind).toBe("fact");
   });
 
   it("flags a trading on/off switch", () => {
@@ -39,8 +56,10 @@ describe("honeypot rules", () => {
           "function setSellFee(uint256 fee) external onlyOwner { require(fee <= 5, 'max'); sellFee = fee; }",
       }),
     );
-    expect(uncapped.find((f) => f.id === "honeypot.mutable_fees")?.severity).toBe("high");
-    expect(capped.find((f) => f.id === "honeypot.mutable_fees")?.severity).toBe("medium");
+    expect(uncapped.find((f) => f.id === "honeypot.mutable_fees")?.severity).toBe("medium");
+    expect(capped.find((f) => f.id === "honeypot.mutable_fees")?.severity).toBe("low");
+    // Either way it is a power someone holds, not proof of intent.
+    expect(uncapped.find((f) => f.id === "honeypot.mutable_fees")?.kind).toBe("capability");
   });
 
   it("ignores red-flag words that only appear in comments", () => {
@@ -56,12 +75,14 @@ describe("honeypot rules", () => {
 });
 
 describe("mint rules", () => {
-  it("flags an uncapped mint as high", () => {
+  it("flags an uncapped mint, without calling it a scam", () => {
     const findings = mintableChecks(
       context({ source: "function mint(address to, uint256 amount) external onlyOwner {}" }),
     );
     expect(findings[0].id).toBe("mint.unlimited");
-    expect(findings[0].severity).toBe("high");
+    // Every stablecoin on earth mints. Disclosed, never condemned.
+    expect(findings[0].kind).toBe("capability");
+    expect(findings[0].humanReason).toMatch(/depends who/i);
   });
 
   it("downgrades a mint with a supply cap", () => {
@@ -97,7 +118,7 @@ describe("mint rules", () => {
 });
 
 describe("ownership rules", () => {
-  it("treats an upgradeable contract owned by a personal wallet as high", () => {
+  it("treats an upgradeable contract owned by a personal wallet as the worse case", () => {
     const findings = ownershipChecks(
       context({
         proxy: { isProxy: true, implementation: "0xabc" },
@@ -106,7 +127,8 @@ describe("ownership rules", () => {
       }),
     );
     expect(ids(findings)).toContain("ownership.upgradeable_eoa_owner");
-    expect(findings[0].severity).toBe("high");
+    expect(findings[0].kind).toBe("capability");
+    expect(findings[0].severity).toBe("medium");
   });
 
   it("is softer when the owner is itself a contract", () => {
@@ -199,7 +221,8 @@ describe("aggregation", () => {
   it("sorts the worst finding first", () => {
     const findings = runChecks(
       context({
-        source: "function mint(address to, uint256 a) external {}",
+        source:
+          "function _transfer(address from, address to, uint256 v) internal { require(from == owner); }\nfunction mint(address to, uint256 a) external {}",
         owner: "0xdef",
         ownerIsContract: false,
       }),

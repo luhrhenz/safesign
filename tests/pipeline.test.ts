@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { normalizeInput } from "../lib/chains";
 import { flattenEtherscanSource } from "../lib/fetchSource";
 import { buildVerdict, isAmbiguous, type VerdictInput } from "../lib/verdict";
 import { cacheKey, isCacheable } from "../lib/cache";
@@ -13,10 +12,23 @@ const CLEAN_SCAN = {
   degraded: false,
 };
 
-const finding = (severity: Finding["severity"], id = `test.${severity}`): Finding => ({
+const finding = (
+  severity: Finding["severity"],
+  id = `test.${severity}`,
+  kind: Finding["kind"] = "capability",
+): Finding => ({
   id,
+  kind,
   severity,
   humanReason: `something ${severity}`,
+});
+
+/** A proven fact — the only kind of finding allowed to reach DANGER. */
+const fact = (id = "test.fact"): Finding => ({
+  id,
+  kind: "fact",
+  severity: "high",
+  humanReason: "nobody can sell this",
 });
 
 const contractInput = (overrides: Partial<VerdictInput> = {}): VerdictInput => ({
@@ -27,53 +39,7 @@ const contractInput = (overrides: Partial<VerdictInput> = {}): VerdictInput => (
   ...overrides,
 });
 
-describe("input normalization", () => {
-  it("takes a bare address", () => {
-    expect(normalizeInput(" 0xAbC0000000000000000000000000000000000001 ")).toEqual({
-      kind: "address",
-      address: "0xabc0000000000000000000000000000000000001",
-    });
-  });
-
-  it("reads the chain from an eip-3770 prefix", () => {
-    expect(normalizeInput("celo:0xABC0000000000000000000000000000000000001").chainHint).toBe(
-      "celo",
-    );
-  });
-
-  it("reads the chain and address from an explorer link", () => {
-    const result = normalizeInput(
-      "https://basescan.org/token/0xabc0000000000000000000000000000000000001",
-    );
-    expect(result).toMatchObject({
-      kind: "address",
-      chainHint: "base",
-      domain: "basescan.org",
-      address: "0xabc0000000000000000000000000000000000001",
-    });
-  });
-
-  it("pulls an address out of a dApp query string", () => {
-    const result = normalizeInput(
-      "https://swap.example.com/trade?outputCurrency=0xABC0000000000000000000000000000000000001",
-    );
-    expect(result.address).toBe("0xabc0000000000000000000000000000000000001");
-    expect(result.domain).toBe("swap.example.com");
-  });
-
-  it("keeps a link with no address as a link", () => {
-    expect(normalizeInput("claim-airdrop.example")).toEqual({
-      kind: "link",
-      chainHint: undefined,
-      domain: "claim-airdrop.example",
-    });
-  });
-
-  it("rejects nonsense", () => {
-    expect(normalizeInput("hello there").kind).toBe("unknown");
-    expect(normalizeInput("   ").kind).toBe("unknown");
-  });
-});
+// Input classification lives in tests/classifier.test.ts.
 
 describe("etherscan source flattening", () => {
   it("passes plain solidity through", () => {
@@ -115,8 +81,15 @@ describe("verdict engine (rules only)", () => {
     expect(result.verdict).toBe("DANGER");
   });
 
-  it("is DANGER on a high-severity finding", () => {
-    expect(buildVerdict(contractInput({ findings: [finding("high")] })).verdict).toBe("DANGER");
+  it("is DANGER on a proven fact", () => {
+    expect(buildVerdict(contractInput({ findings: [fact()] })).verdict).toBe("DANGER");
+  });
+
+  it("is NOT danger on a capability, however severe it looks", () => {
+    // The USDT bug in one line: "the owner can" is not "this is a scam".
+    const result = buildVerdict(contractInput({ findings: [finding("high"), finding("high", "b")] }));
+    expect(result.verdict).toBe("CAUTION");
+    expect(result.headline).toBe("What this can do");
   });
 
   it("never says SAFE about a contract with no published code", () => {

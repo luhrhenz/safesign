@@ -247,7 +247,7 @@ describe("nobody has the source", () => {
     });
 
     expect(verdict.verdict).toBe("CAUTION");
-    expect(verdict.reasons.join(" ")).toMatch(/could not verify/i);
+    expect(`${verdict.lede} ${verdict.reasons.join(" ")}`).toMatch(/could not be read/i);
   });
 
   it("marks an all-providers-down run inconclusive, and says so differently", async () => {
