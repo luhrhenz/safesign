@@ -31,9 +31,10 @@ export function approvalChecks(ctx: CheckContext): Finding[] {
   if (BATCH_TRANSFER_FROM.test(source)) {
     findings.push({
       id: "approvals.batch_transfer_from",
-      severity: "high",
+      kind: "capability",
+      severity: "medium",
       humanReason:
-        "This contract can pull tokens out of many wallets in a single transaction. That is how drainers empty wallets once you have approved them.",
+        "This contract can pull tokens out of many wallets in one go. Airdrop and payment tools do this legitimately; so do drainers, once you approve them.",
       evidence: snippet(source, BATCH_TRANSFER_FROM),
     });
   }
@@ -41,9 +42,10 @@ export function approvalChecks(ctx: CheckContext): Finding[] {
   if (SET_APPROVAL_FOR_ALL.test(source)) {
     findings.push({
       id: "approvals.set_approval_for_all",
-      severity: "high",
+      kind: "capability",
+      severity: "medium",
       humanReason:
-        "This contract asks for permission over all of your NFTs from a collection at once, not just the one you are dealing with.",
+        "This asks for permission over every NFT in a collection at once, not just the one you are dealing with. Marketplaces need this; a page you do not recognise should not.",
       evidence: snippet(source, SET_APPROVAL_FOR_ALL),
     });
   }
@@ -51,9 +53,10 @@ export function approvalChecks(ctx: CheckContext): Finding[] {
   if (PERMIT_THEN_PULL.test(source) && /transferFrom\s*\(/.test(source)) {
     findings.push({
       id: "approvals.permit_forwarding",
-      severity: "high",
+      kind: "capability",
+      severity: "medium",
       humanReason:
-        "This contract uses a signature to take tokens from your wallet. A signature like that can move your funds even though it does not look like a payment.",
+        "This uses a signature to move tokens out of your wallet. A signature like that does not look like a payment, but it can act like one.",
       evidence: snippet(source, PERMIT_THEN_PULL),
     });
   }
@@ -61,9 +64,10 @@ export function approvalChecks(ctx: CheckContext): Finding[] {
   if (ARBITRARY_CALL.test(source)) {
     findings.push({
       id: "approvals.arbitrary_call",
-      severity: "high",
+      kind: "capability",
+      severity: "medium",
       humanReason:
-        "This contract can be told to run any instruction the caller chooses. Whatever it is allowed to touch, that instruction can touch too.",
+        "This contract can be told to run any instruction the caller chooses. Routers work this way by design; it also means it can reach whatever it is allowed to touch.",
       evidence: snippet(source, ARBITRARY_CALL),
     });
   }
@@ -71,9 +75,10 @@ export function approvalChecks(ctx: CheckContext): Finding[] {
   if (UNLIMITED_APPROVAL.test(source)) {
     findings.push({
       id: "approvals.unlimited_approval",
-      severity: "medium",
+      kind: "capability",
+      severity: "low",
       humanReason:
-        "This contract works with unlimited spending permission. If it is ever compromised, everything you approved can be taken.",
+        "This works with unlimited spending permission. Convenient, and it means everything you approved is exposed if it is ever compromised.",
       evidence: snippet(source, UNLIMITED_APPROVAL),
     });
   }

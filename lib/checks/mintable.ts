@@ -24,10 +24,12 @@ export function mintableChecks(ctx: CheckContext): Finding[] {
   const capped = SUPPLY_CAP.test(source);
   findings.push({
     id: capped ? "mint.capped" : "mint.unlimited",
-    severity: capped ? "low" : "high",
+    // A mint function is a power, not a crime. Stablecoins mint every day.
+    kind: "capability",
+    severity: capped ? "low" : "medium",
     humanReason: capped
-      ? "New tokens can still be created, but the code sets a maximum total supply."
-      : "New tokens can be created at any time with no limit in the code. That can push the value of the ones you hold towards zero.",
+      ? "The creator can make new tokens, up to a maximum the code sets. Whether that matters depends on who they are."
+      : "The creator can make new tokens at any time, with no limit in the code. Normal for some projects, a way to drain value in others — it depends who runs it and whether you trust them.",
     evidence: inSource
       ? snippet(source, MINT_FUNCTION)
       : "mint function present in the contract ABI",
