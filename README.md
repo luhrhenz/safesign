@@ -49,12 +49,13 @@ Grant-readiness checklist lives at the bottom of this file (Section 11).
 |---|---|---|
 | Frontend | **Next.js (App Router) + TypeScript** | Lawrence's stack; deploys free on Vercel; works as a MiniPay mini-app (web app). |
 | Backend | **Next.js API routes (serverless)** | No separate server to pay for. |
-| Contract data | **Etherscan V2 multichain API** + public RPC | One key covers Ethereum, Base, Celo *and* BSC — verified against `api.etherscan.io/v2/chainlist`, so no separate Celoscan key is needed. Free tier covers V1. |
+| Contract data | **Sourcify** (primary, keyless) → Etherscan V2 (dormant until a key exists) → Blockscout for Celo, plus public RPC | Works with no API key at all: Sourcify covers cUSD, CELO, USDC on Base and the Ethereum majors. Etherscan V2 needs one key for all four chains and activates by itself once `ETHERSCAN_API_KEY` is set. |
 | Detection | **Plain TypeScript rule functions** (Section 7) | The core product. No AI, no key, no cost. |
 | Verdict | **Deterministic rules over findings** + hardcoded `humanReason` strings | Plain-language output with zero AI. |
 | Cache | **Free KV** (Upstash Redis or Vercel KV free tier) | Cache verdicts by address+chain — kills most repeat work. |
 | AI (OPTIONAL, Phase 8) | Free-tier LLM via a `callLLM()` fallback (Groq → Gemini → OpenRouter → local Ollama) | Only rephrases findings. Degrades gracefully when rate-limited. |
-| Analytics | Simple server-side event counter (`lib/analytics.ts`) | One JSON log line per check. No client-side tracker on a slow phone, no third-party script, no dependency. `@vercel/analytics` was tried and dropped: its peer range conflicts with vitest's Vite. |
+| Analytics | **Durable counters in KV** (`lib/analytics.ts`), read through a private `/api/stats` | A log line as well, but platform logs roll off and a number nobody can retrieve is not evidence of traction. No client-side tracker on a slow phone, no third-party script, no dependency. `@vercel/analytics` was tried and dropped: its peer range conflicts with vitest's Vite. |
+| Abuse control | Fixed-window rate limit, in memory (`lib/rateLimit.ts`) | The endpoint is public and each call fans out into a source lookup and a dozen RPC calls. |
 
 > MiniPay requirements were read from the official docs on 2026-09-08 and written
 > up in [`docs/minipay-submission.md`](docs/minipay-submission.md). Short version:
@@ -98,6 +99,32 @@ User input (address OR link)
 Key rules:
 - **Unverified source = automatic CAUTION at minimum.** Never return SAFE on a contract you couldn't read.
 - **AI is step 7 and skippable.** If it's rate-limited or absent, the tool still returns a full rules-based verdict.
+- **Severity reflects certainty, not capability.** Static analysis proves what code *can* do and can never prove intent.
+
+### The three tiers
+
+| Tier | Reserved for | Example |
+|---|---|---|
+| **DANGER** | Facts only — on a public scam list, code that blocks everyone selling, or a contract calling itself a security update | A listed drainer |
+| **What this can do** | Every owner capability: can mint, freeze, pause, upgrade. Stated plainly, never called a scam | USDT, cUSD |
+| **No red flags** | Nothing found. Never worded as "safe" | WETH |
+
+A capability alone can never reach DANGER. An early version told users not to
+sign USDT — correctly detecting that Tether can freeze and mint, then wrongly
+concluding "scam". A tool that cries wolf on the stablecoin in your wallet
+teaches people to ignore the red screen.
+
+### Measured, not asserted
+
+| Measure | Result |
+|---|---|
+| Legitimate tokens told "do not sign" | **0%** (24 widely-held tokens) |
+| Sampled drainer contracts flagged | **100%** (16 from a public list) |
+| Flagged by a real rule, not just "code unpublished" | **63%** |
+
+Regenerate: `SAFESIGN_BENCH=1 npx vitest run tests/accuracy.live.test.ts`.
+Full table in [`docs/accuracy.md`](docs/accuracy.md); what it cannot do is in
+[`docs/limitations.md`](docs/limitations.md).
 
 ## 7. Static red-flag checks (this is the auditor's edge — the differentiator)
 
