@@ -131,10 +131,16 @@ export interface CheckEvent {
   durationMs: number;
 }
 
-export function recordCheck(event: CheckEvent & { address?: string }): void {
+/**
+ * Returns the write, so a serverless caller can keep the instance alive until
+ * it lands. Fire-and-forget loses the count: the runtime is entitled to freeze
+ * the function the moment the response is sent, and an unawaited promise dies
+ * with it. That is why the deployed counters read zero after real traffic.
+ */
+export function recordCheck(event: CheckEvent & { address?: string }): Promise<void> {
   console.log(JSON.stringify({ event: "safesign.check", ...event }));
 
-  void bump((c) => {
+  return bump((c) => {
     c.checks++;
     c.verdicts[event.verdict] = (c.verdicts[event.verdict] ?? 0) + 1;
     if (event.miniPay) c.miniPayChecks++;
@@ -158,9 +164,16 @@ export function recordCheck(event: CheckEvent & { address?: string }): void {
  */
 export type RejectionReason = "stellar" | "generic" | "unresolved_link" | "unsupported_chain";
 
-export function recordRejection(reason: RejectionReason): void {
+export function recordRejection(reason: RejectionReason): Promise<void> {
   console.log(JSON.stringify({ event: "safesign.rejected", reason }));
-  void bump((c) => {
+  return bump((c) => {
     c.rejections++;
   });
+}
+
+/** Whether counts are durable, or living in one instance's memory. */
+export function storageMode(): "redis" | "memory" {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  return url && token ? "redis" : "memory";
 }

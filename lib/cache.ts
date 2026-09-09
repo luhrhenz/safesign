@@ -103,6 +103,42 @@ export async function setCached<T = CheckResponse>(
  * unreachable, a later request deserves a fresh attempt rather than six hours
  * of the same blind spot.
  */
+/**
+ * A live round trip against the configured store, for the stats endpoint.
+ *
+ * Every cache error is swallowed on purpose — a failing cache must never fail a
+ * safety check — which also means a misconfigured store is invisible. This is
+ * the one place that reports the error instead of hiding it.
+ */
+export async function probeStore(): Promise<{ ok: boolean; detail: string }> {
+  const rest = restConfig();
+  if (!rest) return { ok: false, detail: "no store configured" };
+
+  const key = `safesign:probe:${Date.now()}`;
+  try {
+    const write = await fetch(rest.url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${rest.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(["SET", key, "ok", "EX", "60"]),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!write.ok) return { ok: false, detail: `write returned HTTP ${write.status}` };
+
+    const read = await fetch(`${rest.url}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${rest.token}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!read.ok) return { ok: false, detail: `read returned HTTP ${read.status}` };
+
+    const body = await read.json();
+    return body?.result === "ok"
+      ? { ok: true, detail: "write and read both succeeded" }
+      : { ok: false, detail: `read back ${JSON.stringify(body)}` };
+  } catch (err) {
+    return { ok: false, detail: err instanceof Error ? err.message : "request failed" };
+  }
+}
+
 export function isCacheable(response: CheckResponse): boolean {
   return !response.findings.some((f) => f.id === "meta.source_unavailable") && !response.degraded;
 }

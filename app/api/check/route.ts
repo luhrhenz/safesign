@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { CHAINS, detectChain, linkGuidance, normalizeInput, unrecognizedMessage } from "@/lib/chains";
 import { settleTarget } from "@/lib/resolveLink";
 import { runChecks, summariseChecks } from "@/lib/checks";
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   // lookup, no verdict. Just an honest "not this, and here is what we do check".
   if (parsed.kind === "unrecognized") {
     const reason = parsed.reason ?? "generic";
-    recordRejection(reason);
+    after(() => recordRejection(reason));
     return NextResponse.json({
       status: "unrecognized" as const,
       message: unrecognizedMessage(reason),
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
       if (target.kind === "address") {
         const resolved = await checkAddress(target.address, target.chain, parsed.domain);
-        recordCheck({
+        after(() => recordCheck({
           kind: resolved.subject.kind,
           chain: resolved.subject.chain,
           verdict: resolved.verdict,
@@ -76,12 +76,12 @@ export async function POST(req: NextRequest) {
           cached: resolved.cached === true,
           miniPay,
           durationMs: Date.now() - startedAt,
-        });
+        }));
         return NextResponse.json(resolved);
       }
 
       const guidance = linkGuidance(target);
-      recordRejection(target.kind === "unsupported_chain" ? "unsupported_chain" : "unresolved_link");
+      after(() => recordRejection(target.kind === "unsupported_chain" ? "unsupported_chain" : "unresolved_link"));
       return NextResponse.json({ status: "unrecognized" as const, ...guidance });
     }
 
@@ -90,7 +90,9 @@ export async function POST(req: NextRequest) {
         ? await checkLink(parsed.domain!)
         : await checkAddress(parsed.address!, parsed.chainHint, parsed.domain);
 
-    recordCheck({
+    // after() keeps the function alive until the count is written. Without it
+    // the runtime can freeze the instance the moment the response is sent.
+    after(() => recordCheck({
       kind: response.subject.kind,
       chain: response.subject.chain,
       verdict: response.verdict,
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
       cached: response.cached === true,
       miniPay,
       durationMs: Date.now() - startedAt,
-    });
+    }));
 
     return NextResponse.json(response);
   } catch (err) {

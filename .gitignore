@@ -24,3 +24,8 @@ Thumbs.db
 .vscode/
 *.swp
 *~
+.vercel
+
+# Agent skills (reinstall with: npx skills install)
+.agents/
+.claude/

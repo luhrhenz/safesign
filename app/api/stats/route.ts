@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readCounters } from "@/lib/analytics";
+import { readCounters, storageMode } from "@/lib/analytics";
+import { probeStore } from "@/lib/cache";
 
 export const runtime = "nodejs";
 
@@ -27,7 +28,13 @@ export async function GET(req: NextRequest) {
 
   const { seen, ...totals } = await readCounters();
 
+  // ?probe=1 actually exercises the store and reports what went wrong.
+  const probe = req.nextUrl.searchParams.get("probe") === "1" ? await probeStore() : undefined;
+
   return NextResponse.json({
+    // "memory" means these numbers are one instance's view and will not add up.
+    storage: storageMode(),
+    ...(probe ? { probe } : {}),
     ...totals,
     // The addresses themselves are an implementation detail of the count.
     distinctAddresses: seen.length,
