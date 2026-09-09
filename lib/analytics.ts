@@ -30,3 +30,14 @@ export interface CheckEvent {
 export function recordCheck(event: CheckEvent): void {
   console.log(JSON.stringify({ event: "safesign.check", ...event }));
 }
+
+/**
+ * Input we could not identify. Counted separately from checks, because it is
+ * not a check — and knowing how often people paste a non-EVM address is worth
+ * knowing before deciding what to support next.
+ */
+export type RejectionReason = "stellar" | "generic" | "unresolved_link" | "unsupported_chain";
+
+export function recordRejection(reason: RejectionReason): void {
+  console.log(JSON.stringify({ event: "safesign.rejected", reason }));
+}

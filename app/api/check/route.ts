@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CHAINS, detectChain, normalizeInput } from "@/lib/chains";
-import { runChecks } from "@/lib/checks";
+import { CHAINS, detectChain, linkGuidance, normalizeInput, unrecognizedMessage } from "@/lib/chains";
+import { settleTarget } from "@/lib/resolveLink";
+import { runChecks, summariseChecks } from "@/lib/checks";
 import { fetchContract } from "@/lib/fetchContract";
 import { checkScamLists } from "@/lib/scamLists";
 import { buildVerdict, isAmbiguous, provenanceNotes } from "@/lib/verdict";
 import { cacheKey, getCached, isCacheable, setCached } from "@/lib/cache";
 import { rephrase, rephraseAvailable } from "@/lib/llm/callLLM";
-import { recordCheck } from "@/lib/analytics";
+import { recordCheck, recordRejection } from "@/lib/analytics";
+import { isWellKnown } from "@/lib/wellKnown";
 import type { CheckContext, CheckResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -19,16 +21,47 @@ export async function POST(req: NextRequest) {
   const miniPay = body?.miniPay === true;
 
   const parsed = normalizeInput(raw);
-  if (parsed.kind === "unknown") {
-    return NextResponse.json(
-      { error: "Paste a token address, a contract address, or a link." },
-      { status: 400 },
-    );
+
+  // Nothing we can identify goes no further: no chain probe, no scam-list
+  // lookup, no verdict. Just an honest "not this, and here is what we do check".
+  if (parsed.kind === "unrecognized") {
+    const reason = parsed.reason ?? "generic";
+    recordRejection(reason);
+    return NextResponse.json({
+      status: "unrecognized" as const,
+      message: unrecognizedMessage(reason),
+    });
   }
 
   try {
+    // A link to a token site: settle what it points at, then either run the
+    // ordinary check on the address it named, or explain why we cannot.
+    if (parsed.kind === "link_target") {
+      const target = await settleTarget(parsed.target!);
+
+      if (target.kind === "address") {
+        const resolved = await checkAddress(target.address, target.chain, parsed.domain);
+        recordCheck({
+          kind: resolved.subject.kind,
+          chain: resolved.subject.chain,
+          verdict: resolved.verdict,
+          engine: resolved.engine,
+          verified: resolved.subject.verified,
+          findingCount: resolved.findings.length,
+          cached: resolved.cached === true,
+          miniPay,
+          durationMs: Date.now() - startedAt,
+        });
+        return NextResponse.json(resolved);
+      }
+
+      const guidance = linkGuidance(target);
+      recordRejection(target.kind === "unsupported_chain" ? "unsupported_chain" : "unresolved_link");
+      return NextResponse.json({ status: "unrecognized" as const, ...guidance });
+    }
+
     const response =
-      parsed.kind === "link"
+      parsed.kind === "url"
         ? await checkLink(parsed.domain!)
         : await checkAddress(parsed.address!, parsed.chainHint, parsed.domain);
 
@@ -58,12 +91,13 @@ export async function POST(req: NextRequest) {
 async function checkLink(domain: string): Promise<CheckResponse> {
   const key = cacheKey({ domain });
   const cached = await getCached(key);
-  if (cached) return { ...cached, cached: true };
+  if (cached) return { ...cached, status: "verdict", cached: true };
 
   const scam = await checkScamLists(undefined, domain);
   const input = { kind: "link" as const, verified: false, findings: [], scam };
 
   const response: CheckResponse = {
+    status: "verdict",
     ...(await withOptionalRephrase(input)),
     degraded: scam.degraded,
     subject: { kind: "link", domain },
@@ -85,7 +119,12 @@ async function checkAddress(
   if (!detection.chain) {
     const scam = await checkScamLists(address, domain);
     return {
+      status: "verdict",
       verdict: scam.addressListed ? "DANGER" : "CAUTION",
+      headline: scam.addressListed ? "Do not sign" : "Be careful",
+      lede: scam.addressListed
+        ? "This address is on a public list of addresses used to steal from wallets."
+        : "There is no code at this address on any chain we check.",
       reasons: scam.addressListed
         ? ["This address is on a public list of addresses used to steal from wallets."]
         : [
@@ -106,7 +145,7 @@ async function checkAddress(
   // The cache is checked once the chain is known, since a verdict is per chain.
   const key = cacheKey({ chain, address });
   const cached = await getCached(key);
-  if (cached) return { ...cached, cached: true };
+  if (cached) return { ...cached, status: "verdict", cached: true };
 
   const [contract, scam] = await Promise.all([
     fetchContract(address, chain),
@@ -131,6 +170,7 @@ async function checkAddress(
   const input = { kind: "contract" as const, verified: contract.verified, findings, scam };
 
   const response: CheckResponse = {
+    status: "verdict",
     ...(await withOptionalRephrase(input)),
     degraded: scam.degraded || contract.sourceLookupInconclusive,
     notes: provenanceNotes(contract.provenance),
@@ -142,12 +182,14 @@ async function checkAddress(
       chainLabel: CHAINS[chain].label,
       verified: contract.verified,
       contractName: contract.contractName || undefined,
+      wellKnown: isWellKnown(chain, address) || undefined,
       sourceProvider: contract.provenance?.provider,
       sourceConfidence: contract.provenance?.confidence,
       sourceMatchType: contract.provenance?.matchType,
       explorerUrl: `${CHAINS[chain].explorerUrl}/address/${address}`,
     },
     findings,
+    checks: summariseChecks(ctx, findings),
   };
 
   if (isCacheable(response)) await setCached(key, response);
@@ -167,7 +209,9 @@ async function withOptionalRephrase(input: Parameters<typeof buildVerdict>[0]) {
   }
 
   const reworded = await rephrase(verdict);
+  // The rephrase layer may only touch wording of the reasons and the action.
+  // The verdict, headline and lede are the tier itself and stay untouched.
   return reworded
-    ? { verdict: verdict.verdict, ...reworded, engine: "rules+llm" }
+    ? { ...verdict, ...reworded, engine: "rules+llm" }
     : { ...verdict, engine: "rules" };
 }
