@@ -55,14 +55,58 @@ describe("reading a contract with no published source", () => {
     expect(unverified(dispatcher("0x70a08231", "0x23b872dd"))).toEqual([]);
   });
 
-  it("stays quiet when the source was published — the source says more", () => {
+  it("leaves owner powers to the source rules when there is source", () => {
     const findings = bytecodeChecks(
-      context({ verified: true, source: "contract A {}", bytecode: dispatcher("0x5fba79f5") }),
+      context({ verified: true, source: "contract A {}", bytecode: dispatcher("0x40c10f19") }),
     );
     expect(findings).toEqual([]);
   });
 
+  it("still reads the interface of a VERIFIED drainer", () => {
+    // The benchmark's real miss: source published, nothing for the source rules
+    // to match, and a drainer interface sitting in plain sight.
+    const findings = bytecodeChecks(
+      context({ verified: true, source: "contract A {}", bytecode: dispatcher("0x5fba79f5") }),
+    );
+    expect(ids(findings)).toContain("approvals.drainer_interface");
+  });
+});
+
+describe("what the contract calls itself", () => {
+  it("treats a self-declared security update as a fact", () => {
+    const findings = bytecodeChecks(
+      context({ verified: true, contractName: "SecurityUpdates", bytecode: dispatcher("0x5fba79f5") }),
+    );
+    const identity = findings.find((f) => f.id === "approvals.phishing_identity");
+    expect(identity?.kind).toBe("fact");
+    expect(identity?.humanReason).toMatch(/never ask you to run one/i);
+  });
+
+  it("does not double-report the same trick twice", () => {
+    const findings = bytecodeChecks(
+      context({ verified: true, contractName: "SecurityUpdate", bytecode: dispatcher("0x5fba79f5") }),
+    );
+    expect(ids(findings)).not.toContain("approvals.drainer_interface");
+  });
+
+  it("is softer on a name a real project might use", () => {
+    const findings = bytecodeChecks(
+      context({ verified: true, contractName: "Airdrop", bytecode: dispatcher("0x70a08231") }),
+    );
+    expect(findings[0].id).toBe("approvals.bait_identity");
+    expect(findings[0].kind).toBe("capability");
+  });
+
+  it("leaves ordinary contract names alone", () => {
+    for (const contractName of ["TetherToken", "WETH9", "MerkleDistributor", "StableTokenProxy"]) {
+      const findings = bytecodeChecks(
+        context({ verified: true, contractName, bytecode: dispatcher("0x70a08231") }),
+      );
+      expect(findings).toEqual([]);
+    }
+  });
+
   it("stays quiet for an address with no code at all", () => {
-    expect(unverified("0x")).toEqual([]);
+    expect(bytecodeChecks(context({ verified: false, source: "", bytecode: "0x" }))).toEqual([]);
   });
 });

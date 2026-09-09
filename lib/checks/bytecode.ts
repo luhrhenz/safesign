@@ -1,5 +1,5 @@
 /**
- * Reading a contract that never published its source.
+ * Reading a contract's interface and its name.
  *
  * The accuracy benchmark made the case for this file. Of the drainer addresses
  * sampled from a public list, seven of eight had no published source, so the
@@ -18,9 +18,10 @@
  * selectors) and refuses to print anything until it reproduces published values
  * such as transferFrom -> 0x23b872dd.
  *
- * These stay CAUTION-tier capabilities, never facts. A legitimate airdrop
- * contract can have a Claim() function, and a false alarm on a real token costs
- * more than a missed warning here.
+ * Almost everything here is CAUTION-tier: a legitimate airdrop can have a
+ * Claim() function, and a false alarm on a real token costs more than a missed
+ * warning. The one exception is a contract that calls itself a security update,
+ * which no honest project has ever done.
  */
 
 import type { CheckContext, Finding } from "../types";
@@ -117,25 +118,65 @@ export function extractSelectors(bytecode: string): Set<string> {
   return found;
 }
 
+/**
+ * Names that exist only to look plausible in a wallet's signature prompt.
+ *
+ * The benchmark found six listed drainers whose source WAS published, all named
+ * `SecurityUpdates`, all coming back with no findings — the source rules look
+ * for honeypot and mint patterns, and a drainer has neither. What it has is a
+ * name designed to make "do you approve this?" sound like routine maintenance.
+ *
+ * No legitimate project ships a contract called SecurityUpdate. That is what
+ * makes this the rare naming heuristic honest enough to treat as a fact.
+ */
+const PHISHING_IDENTITY = /^\s*security[\s_-]?updates?\s*$/i;
+
+/** Suggestive, but a real project could plausibly use them. */
+const BAIT_IDENTITY = /^\s*(claim(er|s)?|airdrops?|connect(or)?|verif(y|ier)|wallet[\s_-]?(connect|update))\s*$/i;
+
 export function bytecodeChecks(ctx: CheckContext): Finding[] {
-  // Source, where we have it, says more than an interface ever could.
-  if (ctx.verified || !ctx.bytecode || ctx.bytecode.length <= 2) return [];
+  if (!ctx.bytecode || ctx.bytecode.length <= 2) return [];
 
   const selectors = extractSelectors(ctx.bytecode);
   const findings: Finding[] = [];
+  const name = ctx.contractName ?? "";
 
+  // ---- who the contract says it is -------------------------------------
+  if (PHISHING_IDENTITY.test(name)) {
+    findings.push({
+      id: "approvals.phishing_identity",
+      kind: "fact",
+      severity: "high",
+      humanReason:
+        "This contract calls itself a security update. That is a trick: it is named to make approving it feel like routine maintenance. Real projects never ask you to run one.",
+      evidence: `contract name: ${name}`,
+    });
+  } else if (BAIT_IDENTITY.test(name)) {
+    findings.push({
+      id: "approvals.bait_identity",
+      kind: "capability",
+      severity: "high",
+      humanReason:
+        `This contract calls itself "${name.trim()}". Fake airdrop and claim pages use names like this to get you to approve them. A real airdrop can too — check you reached this from somewhere you trust.`,
+      evidence: `contract name: ${name}`,
+    });
+  }
+
+  // ---- what the interface offers ---------------------------------------
+  // Read whether or not the source was published: a drainer's source can be
+  // perfectly readable and still contain nothing our source rules look for.
   const bait = Object.entries(DRAINER_BAIT)
     .filter(([selector]) => selectors.has(selector))
     .map(([, signature]) => signature);
 
-  if (bait.length > 0) {
+  if (bait.length > 0 && !findings.some((f) => f.id === "approvals.phishing_identity")) {
     findings.push({
       id: "approvals.drainer_interface",
       kind: "capability",
       severity: "high",
       humanReason:
-        "This has unpublished code with buttons named like the ones on fake airdrop and \"wallet security\" pages. Real projects do not need you to run a security update.",
-      evidence: `unpublished code exposes ${bait.join(", ")}`,
+        "This has the buttons of a fake airdrop or \"wallet security\" page. Real projects do not ask you to run a security update or connect for a reward.",
+      evidence: `exposes ${bait.join(", ")}`,
     });
   }
 
@@ -143,7 +184,7 @@ export function bytecodeChecks(ctx: CheckContext): Finding[] {
     .filter(([selector]) => selectors.has(selector))
     .map(([, signature]) => signature);
 
-  if (sweeping.length > 0) {
+  if (sweeping.length > 0 && !ctx.verified) {
     findings.push({
       id: "approvals.batch_interface",
       kind: "capability",
@@ -153,6 +194,9 @@ export function bytecodeChecks(ctx: CheckContext): Finding[] {
       evidence: `unpublished code exposes ${sweeping.join(", ")}`,
     });
   }
+
+  // ---- owner powers, only where there is no source to read them from ----
+  if (ctx.verified) return findings;
 
   for (const power of OWNER_POWERS) {
     if (!selectors.has(power.selector)) continue;
