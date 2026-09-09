@@ -35,6 +35,7 @@ You are given a verdict and the reasons behind it. Say the SAME things in simple
 Rules:
 - Do not change the meaning. Do not add a reason. Do not remove a reason. Do not soften a warning.
 - Never say something is safe. That decision is already made and is not yours.
+- Keep any "it depends who runs it" wording. A line saying what the owner CAN do is a disclosure, not an accusation — do not rewrite it into one.
 - Short, ordinary sentences. No jargon: no "contract", "approval", "mint", "proxy", "owner-only".
 - Each reason is one sentence about what could happen to the person's money.
 - Return ONLY this JSON, no markdown: {"reasons": ["...", "..."], "whatToDo": "..."}`;
