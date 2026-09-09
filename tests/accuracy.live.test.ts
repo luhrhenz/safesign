@@ -90,8 +90,10 @@ async function sampleMalicious(size: number): Promise<string[]> {
     { signal: AbortSignal.timeout(20_000) },
   );
   const all: string[] = await res.json();
-  const step = Math.max(1, Math.floor(all.length / (size * 6)));
-  return all.filter((_, i) => i % step === 0).slice(0, size * 6);
+  // Most listed addresses are wallets, not contracts, so the candidate pool has
+  // to be far larger than the sample we want to end up with.
+  const step = Math.max(1, Math.floor(all.length / (size * 40)));
+  return all.filter((_, i) => i % step === 0).slice(0, size * 40);
 }
 
 function table(rows: Row[]): string {
@@ -139,7 +141,9 @@ describe.runIf(process.env.SAFESIGN_BENCH === "1")("accuracy benchmark", () => {
       const bad: Row[] = [];
       for (const address of candidates) {
         if (bad.length >= MALICIOUS_SAMPLE_SIZE) break;
-        for (const chain of ["ethereum", "bsc", "base", "celo"] as ChainKey[]) {
+        // Drainers concentrate on these two; checking four chains per address
+        // spends most of the run on wallets that have no code anywhere.
+        for (const chain of ["ethereum", "bsc"] as ChainKey[]) {
           if (bad.length >= MALICIOUS_SAMPLE_SIZE) break;
           try {
             const row = await assess({ chain, address, label: `listed drainer` });
