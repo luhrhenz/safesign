@@ -104,3 +104,16 @@ Not applicable: SafeSign deploys no contracts.
 
 App name, tagline (1–2 sentences), publisher, support URL, Terms URL, Privacy
 URL, category (utility), app URL, 512×512 icon.
+
+## Still to do — yours, not the code's
+
+These need a person, a phone, or an account. Deliberately left unchecked.
+
+- [ ] Deploy to a public URL
+- [ ] Open the deployed app inside MiniPay on a real Android handset and confirm
+      the share sheet, clipboard and history behave (in-app browsers restrict
+      all three; the code degrades, but it has never been observed doing so)
+- [ ] Produce the 512×512 icon
+- [ ] Record the demo video (see `demo-script.md`)
+- [ ] Create the Karma GAP profile (fields drafted in `karma-gap.md`)
+- [ ] Submit the MiniPay listing form
