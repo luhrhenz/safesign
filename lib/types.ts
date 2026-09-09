@@ -2,10 +2,27 @@
 
 export type Severity = "high" | "medium" | "low" | "info";
 
+/**
+ * What a finding actually establishes — the distinction the verdict turns on.
+ *
+ * Static analysis can prove what code CAN do. It cannot read intent. The same
+ * freeze-and-mint powers are deliberate in USDT and lethal in a rug, and no
+ * regex will ever tell the two apart. So a finding says which of these it is,
+ * and only "fact" is allowed to condemn:
+ *
+ *   fact       — true regardless of who runs it: on a scam list, or code that
+ *                blocks everyone from selling.
+ *   capability — something the owner is able to do. Disclosed, never judged.
+ *   context    — neither; background for the reader.
+ */
+export type FindingKind = "fact" | "capability" | "context";
+
 /** What every static red-flag rule returns (README §6). */
 export interface Finding {
   /** Stable machine id, e.g. "honeypot.blacklist_mapping". */
   id: string;
+  /** Whether this is proof of harm, or a power someone holds. */
+  kind: FindingKind;
   severity: Severity;
   /** Plain language. No jargon — this can end up in front of a user. */
   humanReason: string;
@@ -17,14 +34,33 @@ export type Verdict = "SAFE" | "CAUTION" | "DANGER";
 
 export interface VerdictResult {
   verdict: Verdict;
+  /** The words at the top of the card. Computed with the verdict, so the
+   *  wording is testable and cannot drift out of step with the tier. */
+  headline: string;
+  /** One plain line under the headline. */
+  lede: string;
   /** 2–3 short reasons, plain language. */
   reasons: string[];
   /** One line: what the user should actually do. */
   whatToDo: string;
 }
 
-/** What /api/check returns, and what the UI renders. */
+/** One line in the "what we found" list. */
+export interface CheckSummaryItem {
+  id: string;
+  /** A question in the user's words, not a rule name. */
+  label: string;
+  /** "unchecked" is not a pass — it means the code could not be read. */
+  status: "flag" | "pass" | "unchecked";
+  detail: string;
+}
+
+/**
+ * What /api/check returns when it actually checked something.
+ * The `status` tag exists so nothing downstream can assume a verdict is there.
+ */
 export interface CheckResponse extends VerdictResult {
+  status: "verdict";
   /** "rules", or "rules+<provider>" when the optional layer reworded them. */
   engine: string;
   /** A scam list or the explorer was unreachable — the check is incomplete. */
@@ -44,6 +80,8 @@ export interface CheckResponse extends VerdictResult {
     chainLabel?: string;
     verified?: boolean;
     contractName?: string;
+    /** A token most people would recognise. Context only — never a verdict. */
+    wellKnown?: boolean;
     /** Which provider supplied the source, when one did. */
     sourceProvider?: string;
     sourceConfidence?: "high" | "medium";
@@ -51,6 +89,8 @@ export interface CheckResponse extends VerdictResult {
     explorerUrl?: string;
   };
   findings: Finding[];
+  /** The four questions we ask of a contract, and how each came out. */
+  checks?: CheckSummaryItem[];
 }
 
 export interface CheckContext {
@@ -82,4 +122,32 @@ export interface AbiFragment {
   name?: string;
   stateMutability?: string;
   inputs?: { name?: string; type?: string }[];
+}
+
+/**
+ * The fourth UI state, alongside SAFE / CAUTION / DANGER: input we could not
+ * identify. It carries no verdict, no subject and no findings, because nothing
+ * was checked. Claiming otherwise is the failure this state exists to prevent.
+ */
+export interface UnrecognizedResponse {
+  status: "unrecognized";
+  message: string;
+  /** A second line telling the user what to try instead, when we know. */
+  hint?: string;
+}
+
+export type CheckApiResponse = CheckResponse | UnrecognizedResponse;
+
+export function isUnrecognized(
+  response: CheckApiResponse,
+): response is UnrecognizedResponse {
+  return response.status === "unrecognized";
+}
+
+/**
+ * The single decision the UI makes about the traffic light. Lives here rather
+ * than in the component so it is framework-agnostic and directly testable.
+ */
+export function shouldRenderVerdictCard(response: CheckApiResponse | null): boolean {
+  return response !== null && response.status === "verdict";
 }
