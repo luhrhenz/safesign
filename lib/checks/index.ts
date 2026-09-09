@@ -9,6 +9,7 @@
 
 import type { CheckContext, CheckSummaryItem, Finding, Severity } from "../types";
 import { approvalChecks } from "./approvals";
+import { bytecodeChecks } from "./bytecode";
 import { honeypotChecks } from "./honeypot";
 import { mintableChecks } from "./mintable";
 import { ownershipChecks } from "./ownership";
@@ -54,6 +55,8 @@ export function runChecks(ctx: CheckContext): Finding[] {
   }
 
   findings.push(
+    // Reads the compiled interface when there is no source to read.
+    ...bytecodeChecks(ctx),
     ...honeypotChecks(ctx),
     ...mintableChecks(ctx),
     ...ownershipChecks(ctx),
