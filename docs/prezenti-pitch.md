@@ -84,5 +84,5 @@ to work with MiniPay community groups in Nigeria and Kenya on distribution.
 - Repository: https://github.com/luhrhenz/safesign
 - Accuracy: [accuracy.md](accuracy.md)
 - Limitations, stated by us: [limitations.md](limitations.md)
-- Live URL: _to add once deployed_
+- Live URL: https://safesign-umber.vercel.app
 - Karma GAP profile: _to add_

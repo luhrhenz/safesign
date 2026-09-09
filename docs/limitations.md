@@ -49,6 +49,17 @@ plainly is more useful than a green tick. But it does mean **CAUTION is a
 disclosure, not a warning**, and the interface has to keep making that
 difference obvious.
 
+## Usage counters need a KV store
+
+The counters are written to the same KV as the verdict cache. With no KV
+configured they fall back to per-instance memory, and on serverless each request
+may land on a different instance — so `/api/stats` reports zeros no matter how
+many checks have run. Verified on the live deployment.
+
+Fix: add a Redis/KV store to the Vercel project and set `KV_REST_API_URL` and
+`KV_REST_API_TOKEN`. Until then the per-check log line is the only record, and
+it rolls off.
+
 ## Coverage gaps
 
 - EVM only: Celo, Base, Ethereum, BNB Chain. Everything else is refused by name.

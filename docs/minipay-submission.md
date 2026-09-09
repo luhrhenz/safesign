@@ -109,7 +109,7 @@ URL, category (utility), app URL, 512×512 icon.
 
 These need a person, a phone, or an account. Deliberately left unchecked.
 
-- [ ] Deploy to a public URL
+- [x] Deploy to a public URL — https://safesign-umber.vercel.app
 - [ ] Open the deployed app inside MiniPay on a real Android handset and confirm
       the share sheet, clipboard and history behave (in-app browsers restrict
       all three; the code degrades, but it has never been observed doing so)

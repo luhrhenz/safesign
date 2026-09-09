@@ -33,7 +33,7 @@ engine.
 | Field | Value |
 |---|---|
 | Repository | https://github.com/luhrhenz/safesign |
-| Live app | **[PLACEHOLDER — add after deploy]** |
+| Live app | https://safesign-umber.vercel.app |
 | Demo video | **[PLACEHOLDER — 60–90s, see demo-script.md]** |
 | Twitter/X | **[PLACEHOLDER]** |
 | Contact | **[PLACEHOLDER — email used on the application]** |
@@ -64,7 +64,7 @@ Mapped to the build phases, with the evidence each one produces.
 Deployed mini-app, working inside MiniPay on a real device.
 *Evidence:* public URL, screenshots from an Android handset, MiniPay listing
 submission.
-*Status:* code complete, not yet deployed.
+*Status:* **deployed and public at https://safesign-umber.vercel.app**. Remaining: the real-device MiniPay test.
 
 **Milestone 2 — Used by real people**
 500 checks from real users, with the verdict split published.
