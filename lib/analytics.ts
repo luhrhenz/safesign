@@ -33,6 +33,11 @@ export interface Counters {
   verdicts: Record<Verdict, number>;
   rejections: number;
   miniPayChecks: number;
+  /**
+   * Checks per chain. A Celo programme asks what you have done on Celo, and
+   * "contracts analysed on Celo" is the honest answer for a read-only tool.
+   */
+  chains: Record<string, number>;
   distinctAddresses: number;
   /** Bounded -- once full, distinctAddresses stops growing and says so. */
   seen: string[];
@@ -54,6 +59,7 @@ function emptyCounters(): Counters {
     verdicts: { SAFE: 0, CAUTION: 0, DANGER: 0 },
     rejections: 0,
     miniPayChecks: 0,
+    chains: {},
     distinctAddresses: 0,
     seen: [],
     seenCapped: false,
@@ -68,10 +74,15 @@ export async function readCounters(): Promise<Counters> {
 
   if (!stored) return base;
 
+  // Every nested value is copied. A spread alone shares the nested objects
+  // with the cache, so a caller's "snapshot" would be a live view of it and a
+  // caller's mutation would silently rewrite the stored totals. `chains` was
+  // added without this and the per-chain test caught it immediately.
   return {
     ...base,
     ...stored,
     verdicts: { ...base.verdicts, ...stored.verdicts },
+    chains: { ...(stored.chains ?? {}) },
     seen: [...(stored.seen ?? [])],
   };
 }
@@ -143,6 +154,10 @@ export function recordCheck(event: CheckEvent & { address?: string }): Promise<v
   return bump((c) => {
     c.checks++;
     c.verdicts[event.verdict] = (c.verdicts[event.verdict] ?? 0) + 1;
+    if (event.chain) {
+      c.chains = c.chains ?? {};
+      c.chains[event.chain] = (c.chains[event.chain] ?? 0) + 1;
+    }
     if (event.miniPay) c.miniPayChecks++;
 
     const address = event.address?.toLowerCase();

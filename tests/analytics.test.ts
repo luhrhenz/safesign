@@ -95,3 +95,44 @@ describe("counters do not expire", () => {
     }
   });
 });
+
+describe("per-chain counts", () => {
+  const event = (chain: string | undefined) => ({
+    kind: "address" as const,
+    chain,
+    verdict: "CAUTION" as const,
+    engine: "rules",
+    findingCount: 0,
+    cached: false,
+    miniPay: false,
+    durationMs: 5,
+  });
+
+  it("attributes each check to the chain it ran on", async () => {
+    // Drain anything an earlier test left queued, so this measures only ours.
+    await settle();
+    const before = await readCounters();
+
+    await recordCheck({ ...event("celo"), address: "0xaaa0000000000000000000000000000000000001" });
+    await recordCheck({ ...event("celo"), address: "0xaaa0000000000000000000000000000000000002" });
+    await recordCheck({ ...event("base"), address: "0xaaa0000000000000000000000000000000000003" });
+    await settle();
+
+    const after = await readCounters();
+    expect(after.chains.celo).toBe((before.chains.celo ?? 0) + 2);
+    expect(after.chains.base).toBe((before.chains.base ?? 0) + 1);
+  });
+
+  it("counts a check with no chain without inventing one", async () => {
+    await settle();
+    const before = await readCounters();
+
+    await recordCheck({ ...event(undefined), address: "0xaaa0000000000000000000000000000000000004" });
+    await settle();
+
+    const after = await readCounters();
+    expect(after.checks).toBe(before.checks + 1);
+    // Nothing new appeared in the per-chain breakdown.
+    expect(Object.keys(after.chains).length).toBe(Object.keys(before.chains).length);
+  });
+});
