@@ -2,7 +2,7 @@
 
 ## The pitch, in one paragraph
 
-MiniPay put a wallet in roughly 14 million hands, most of them in Nigeria,
+MiniPay has activated 18M+ wallets across 60+ countries, with strong adoption in Nigeria,
 Kenya, Ghana and South Africa, and most belonging to people for whom a drained
 wallet is a month's income rather than an inconvenience. SafeSign is a
 mobile-first checker for those users: paste a token address, a contract, or a
@@ -86,3 +86,18 @@ to work with MiniPay community groups in Nigeria and Kenya on distribution.
 - Limitations, stated by us: [limitations.md](limitations.md)
 - Live URL: https://safesign-umber.vercel.app
 - Karma GAP profile: _to add_
+
+## Figures and sources
+
+| Claim | Figure | Source |
+|---|---|---|
+| MiniPay activated wallets | 18M+ | minipay.to homepage, read 2026-09-10 |
+| Transactions on Celo via MiniPay | 541M+ | minipay.to homepage, read 2026-09-10 |
+| Countries | 60+ | minipay.to homepage, read 2026-09-10 |
+| SafeSign false-alarm rate | 0% of 24 major tokens | docs/accuracy.md, reproducible via SAFESIGN_BENCH=1 |
+| Drainers flagged, scam list off | see docs/accuracy.md | same run |
+
+MiniPay describes itself as a **self-custodial** stablecoin wallet and positions
+globally, not regionally. This pitch does not claim a demographic split it
+cannot source: the argument rests on self-custody, which is verifiable and is
+the reason a signature there is final.

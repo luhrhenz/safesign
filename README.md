@@ -10,7 +10,7 @@ A mobile-first web app where a user pastes a **token address, contract address, 
 
 The core insight driving every decision below:
 - The **scams live on EVM chains** (Ethereum, Base, BSC, Celo) — so the analysis engine is **EVM-first**.
-- The **users we protect live on Celo/MiniPay** (~14M mobile wallets, mostly Africa / LatAm / SE Asia, non-technical, most exposed to drainers). So the app is **homed as a Celo / MiniPay mini-app**.
+- The **users we protect live on Celo/MiniPay** (18M+ activated wallets across 60+ countries, self-custodial, so a drained signature cannot be reversed). So the app is **homed as a Celo / MiniPay mini-app**.
 - Celo is now an **Ethereum L2 (OP Stack, EVM)** — so "build on Celo" and "analyze all EVM chains" are the **same engine**. We lose nothing technically.
 
 This is NOT a browser extension for crypto-natives (that space is taken by Wallet Guard, Scam Sniffer, Blockaid). The differentiation is: **mobile-first, dead-simple, inside MiniPay, plain language, built on real audit logic.**
@@ -215,7 +215,7 @@ Phase 7 needs your Vercel account; Phase 8 is wired but dormant.**
 - [ ] Some real usage numbers (even small — screenshots + analytics)
 - [ ] Karma GAP project profile created
 - [ ] 60–90 second demo (screen recording on a phone)
-- [ ] One-paragraph pitch: "protect MiniPay's 14M+ users from drainers / scam tokens"
+- [ ] One-paragraph pitch: "protect MiniPay's 18M+ self-custodial wallets from drainers / scam tokens"
 
 ---
 

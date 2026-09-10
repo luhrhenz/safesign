@@ -73,7 +73,7 @@ tool and a toy.
 *On screen:* back to the empty input.
 
 > "No wallet connection, ever. It never asks to touch your money. Works on a
-> cheap phone on slow data. It's for the 14 million people on MiniPay who are
+> cheap phone on slow data. It's for the 18 million wallets on MiniPay whose owners are
 > one wrong tap from losing a month's income."
 
 ---

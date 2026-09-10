@@ -29,3 +29,6 @@ Thumbs.db
 # Agent skills (reinstall with: npx skills install)
 .agents/
 .claude/
+
+# python bytecode from scripts/
+__pycache__/
