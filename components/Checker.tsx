@@ -120,7 +120,7 @@ export function Checker() {
   return (
     <>
       {/* The beam lives on the panel: neutral at rest, travelling while we read. */}
-      <div className={loading ? "panel panel-scanning" : "panel"}>
+      <div className={loading ? "glass panel panel-scanning" : "glass panel"}>
         <form onSubmit={onSubmit}>
           <label htmlFor="input" className="field-label">
             Address, link, or coin name
