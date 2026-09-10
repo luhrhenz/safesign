@@ -143,15 +143,24 @@ export function isCacheable(response: CheckResponse): boolean {
   return !response.findings.some((f) => f.id === "meta.source_unavailable") && !response.degraded;
 }
 
+/**
+ * How long a never-expiring value may be trusted from this instance's memory.
+ *
+ * `ttlSeconds: null` means "do not expire in the shared store" — it must never
+ * mean "cache forever in this process". Other instances write the same key, so
+ * an immortal local copy leaves an instance frozen on the first value it read.
+ * That is exactly what happened to the usage counters: writes landed in Redis
+ * while /api/stats served a stale total indefinitely.
+ */
+const LOCAL_TTL_FOR_PERSISTENT_SECONDS = 5;
+
 function rememberLocally(key: string, value: unknown, ttlSeconds: number | null = TTL_SECONDS): void {
   if (memory.size >= MEMORY_MAX_ENTRIES) {
     const oldest = memory.keys().next().value;
     if (oldest) memory.delete(oldest);
   }
-  memory.set(key, {
-    value,
-    expiresAt: ttlSeconds === null ? Number.POSITIVE_INFINITY : Date.now() + ttlSeconds * 1000,
-  });
+  const localTtl = ttlSeconds === null ? LOCAL_TTL_FOR_PERSISTENT_SECONDS : ttlSeconds;
+  memory.set(key, { value, expiresAt: Date.now() + localTtl * 1000 });
 }
 
 function restConfig(): { url: string; token: string } | null {

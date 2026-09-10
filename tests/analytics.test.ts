@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { countersSettled, readCounters, recordCheck, recordRejection } from "../lib/analytics";
+import { getCached, setCached } from "../lib/cache";
 
 /** Counters share the cache's in-memory fallback, so this exercises the real path. */
 const settle = countersSettled;
@@ -135,4 +136,38 @@ describe("per-chain counts", () => {
     // Nothing new appeared in the per-chain breakdown.
     expect(Object.keys(after.chains).length).toBe(Object.keys(before.chains).length);
   });
+});
+
+describe("a never-expiring value is not cached forever locally", () => {
+  it("re-reads the shared store once the local window passes", async () => {
+    const original = globalThis.fetch;
+    const key = "safesign:test:persistent";
+    process.env.KV_REST_API_URL = "https://kv.example";
+    process.env.KV_REST_API_TOKEN = "token";
+
+    // What the shared store returns changes, as another instance's write would.
+    let stored = { n: 1 };
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      if (init?.method === "POST") return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify({ result: JSON.stringify(stored) }), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    try {
+      // Stored with no expiry, exactly as the counters are.
+      await setCached(key, { n: 1 }, null);
+
+      stored = { n: 2 };
+      // Inside the local window the cached copy is fine to serve.
+      expect((await getCached<{ n: number }>(key))?.n).toBe(1);
+
+      // Past it, the shared store has to win — otherwise this instance is
+      // frozen on its first read forever.
+      await new Promise((r) => setTimeout(r, 5200));
+      expect((await getCached<{ n: number }>(key))?.n).toBe(2);
+    } finally {
+      globalThis.fetch = original;
+      delete process.env.KV_REST_API_URL;
+      delete process.env.KV_REST_API_TOKEN;
+    }
+  }, 15_000);
 });
