@@ -19,7 +19,8 @@ export default function Page() {
 
       <h1 className="ask">Is this safe to sign?</h1>
       <p className="standfirst">
-        Paste a token, a contract, or a link. We read the code before you agree to anything.
+        Paste a coin&rsquo;s name, its address, or the link you were sent. You get a straight
+        answer before you approve anything.
       </p>
 
       <Checker />

@@ -119,39 +119,68 @@ export function Checker() {
 
   return (
     <>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="input" className="field-label">
-          Token address, contract address, a link — or just the name of a coin
-        </label>
-        <textarea
-          id="input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="0x…, a link, or the name of a coin"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          enterKeyHint="go"
-        />
-        <button type="submit" className="primary" disabled={loading || !input.trim()}>
-          {loading ? "Checking…" : "Check it"}
-        </button>
-      </form>
-
-      <div className="examples">
-        <span>Nothing to paste?</span>
-        {EXAMPLES.map((example) => (
-          <button
-            key={example.input}
-            type="button"
-            className="example"
-            disabled={loading}
-            onClick={() => runExample(example.input)}
-          >
-            {example.label}
+      {/* The beam lives on the panel: neutral at rest, travelling while we read. */}
+      <div className={loading ? "panel panel-scanning" : "panel"}>
+        <form onSubmit={onSubmit}>
+          <label htmlFor="input" className="field-label">
+            Address, link, or coin name
+          </label>
+          <textarea
+            id="input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="0x…, a link, or the name of a coin"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="go"
+          />
+          <button type="submit" className="primary" disabled={loading || !input.trim()}>
+            {loading ? "Reading the code…" : "Check it"}
           </button>
-        ))}
+        </form>
+
+        <div className="examples">
+          <span>Nothing to paste?</span>
+          {EXAMPLES.map((example) => (
+            <button
+              key={example.input}
+              type="button"
+              className="example"
+              disabled={loading}
+              onClick={() => runExample(example.input)}
+            >
+              {example.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {!loading && !result && !error && (
+        <ol className="primer">
+          <li>
+            <span className="n">01</span>
+            <span>
+              <strong>We read the actual code</strong>
+              Published source where it exists, the compiled contract where it does not.
+            </span>
+          </li>
+          <li>
+            <span className="n">02</span>
+            <span>
+              <strong>We check who controls it</strong>
+              Whether anyone can freeze your balance, mint more, or swap the code out.
+            </span>
+          </li>
+          <li>
+            <span className="n">03</span>
+            <span>
+              <strong>We say it plainly</strong>
+              No jargon, no score out of ten — and never &ldquo;safe&rdquo; when we cannot tell.
+            </span>
+          </li>
+        </ol>
+      )}
 
       {loading && (
         <div className="scanning" role="status">
