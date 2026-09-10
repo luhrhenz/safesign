@@ -123,9 +123,12 @@ If the form asks why the app never requests wallet access, the stance is in
 These need a person, a phone, or an account. Deliberately left unchecked.
 
 - [x] Deploy to a public URL — https://safesign-umber.vercel.app
-- [ ] Open the deployed app inside MiniPay on a real Android handset and confirm
-      the share sheet, clipboard and history behave (in-app browsers restrict
-      all three; the code degrades, but it has never been observed doing so)
+- [x] Open the deployed app inside MiniPay on a real Android handset — **done
+      2026-09-10**. Loaded via Developer Mode -> Load test page. A DANGER
+      verdict rendered correctly (contract name, chain pill, cached pill,
+      collapsible checks list, Warn someone button) over a 20.6 KB/s
+      connection. Screenshot: `docs/screenshots/minipay-device-test.jpg`.
+      `/api/stats` confirms `miniPayChecks` incrementing on real taps.
 - [x] Produce the 512×512 icon — `public/icon-512.png`
 - [ ] Record the demo video (see `demo-script.md`)
 - [ ] Create the Karma GAP profile (fields drafted in `karma-gap.md`)
