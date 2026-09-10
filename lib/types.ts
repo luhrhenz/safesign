@@ -1,4 +1,5 @@
 /** Shared types for the whole analysis pipeline. */
+import type { TokenMatch } from "./tokenSearch";
 
 export type Severity = "high" | "medium" | "low" | "info";
 
@@ -136,7 +137,19 @@ export interface UnrecognizedResponse {
   hint?: string;
 }
 
-export type CheckApiResponse = CheckResponse | UnrecognizedResponse;
+/**
+ * Non-verdict, like UnrecognizedResponse — but instead of a dead end, a set
+ * of real candidates for a name that isn't unique. The user picks; that pick
+ * becomes an ordinary address check, same pipeline as a pasted address. This
+ * state itself carries no safety claim about any of them.
+ */
+export interface NameMatchesResponse {
+  status: "name_matches";
+  query: string;
+  matches: TokenMatch[];
+}
+
+export type CheckApiResponse = CheckResponse | UnrecognizedResponse | NameMatchesResponse;
 
 export function isUnrecognized(
   response: CheckApiResponse,

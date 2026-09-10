@@ -427,3 +427,36 @@ footer a { color: var(--muted); }
 main h1 { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.02em; }
 main h2 { margin: 1.75rem 0 0.5rem; font-size: 1.0625rem; font-weight: 500; }
 main > p { margin: 0 0 0.75rem; }
+
+/* ---- name search: candidates, never an auto-pick -------------------- */
+
+.name-matches p { margin: 0 0 0.75rem; }
+
+.match-list {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.match {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.match[disabled] { opacity: 0.5; }
+
+.match-name { font-weight: 500; font-size: 0.9375rem; }
+.match-symbol { font-family: var(--mono); color: var(--muted); font-size: 0.8125rem; }
+.match-meta { font-size: 0.8125rem; color: var(--muted); }

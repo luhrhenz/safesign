@@ -121,13 +121,13 @@ export function Checker() {
     <>
       <form onSubmit={onSubmit}>
         <label htmlFor="input" className="field-label">
-          Token address, contract address, or link
+          Token address, contract address, a link — or just the name of a coin
         </label>
         <textarea
           id="input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="0x… or https://…"
+          placeholder="0x…, a link, or the name of a coin"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
@@ -170,6 +170,37 @@ export function Checker() {
         and it looks fine" about something we never parsed is the one failure
         this app cannot afford.
       */}
+      {result?.status === "name_matches" && (
+        <div className="unsupported name-matches" role="status">
+          <p>
+            {result.matches.length === 1
+              ? `Found one token called "${result.query}". Names are not unique — make sure this is the right one before you continue:`
+              : `Found ${result.matches.length} tokens called "${result.query}". Names are not unique — anyone can use one, including a scammer copying a real one. Pick the one you actually saw:`}
+          </p>
+          <ul className="match-list">
+            {result.matches.map((m) => (
+              <li key={`${m.chain}:${m.address}`}>
+                <button
+                  type="button"
+                  className="match"
+                  disabled={loading}
+                  onClick={() => runExample(m.address)}
+                >
+                  <span className="match-name">
+                    {m.name} <span className="match-symbol">{m.symbol}</span>
+                  </span>
+                  <span className="match-meta">
+                    {m.chainLabel}
+                    {m.marketCapRank ? ` · #${m.marketCapRank} by market cap` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="scope">None of these? It may not be on a chain we check yet.</p>
+        </div>
+      )}
+
       {result?.status === "unrecognized" && (
         <div className="unsupported" role="status">
           <p>{result.message}</p>

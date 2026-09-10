@@ -10,6 +10,7 @@ import { rephrase, rephraseAvailable } from "@/lib/llm/callLLM";
 import { recordCheck, recordRejection } from "@/lib/analytics";
 import { callerKey, checkRateLimit } from "@/lib/rateLimit";
 import { isWellKnown } from "@/lib/wellKnown";
+import { searchTokenByName } from "@/lib/tokenSearch";
 import type { CheckContext, CheckResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -50,6 +51,30 @@ export async function POST(req: NextRequest) {
   // lookup, no verdict. Just an honest "not this, and here is what we do check".
   if (parsed.kind === "unrecognized") {
     const reason = parsed.reason ?? "generic";
+
+    // Most people who reach this app have a name, not an address — "is
+    // BeanToken safe" is the actual question, and nobody outside a dev team
+    // knows a contract address exists. So free text gets one more try before
+    // it is refused: search by name.
+    //
+    // Names are not unique. Anyone can deploy a token called anything, and
+    // copying a popular name is a standard scam move — searching "bean" on
+    // 2026-09-10 returned two different, unrelated tokens both called BEAN.
+    // So this NEVER auto-picks a result. It always hands back a list, even a
+    // list of one, and the user's tap is what turns a candidate into a real
+    // check — the same pipeline a pasted address goes through, nothing
+    // skipped. CoinGecko is a search index here, not a source of truth.
+    if (reason === "generic") {
+      const matches = await searchTokenByName(raw);
+      if (matches.length > 0) {
+        return NextResponse.json({
+          status: "name_matches" as const,
+          query: raw.trim(),
+          matches,
+        });
+      }
+    }
+
     after(() => recordRejection(reason));
     return NextResponse.json({
       status: "unrecognized" as const,
