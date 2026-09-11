@@ -1,97 +1,109 @@
 # X post — launch copy
 
-Attach `safesign-pitch.mp4`. Every claim below is checkable at the live URL.
+Every claim below is checkable at <https://safesign-umber.vercel.app>.
+
+> **Before posting:** the current `safesign-pitch.mp4` shows the pre-redesign UI
+> and has no name-search beat. Re-render it, or post stills, before it goes out.
 
 ---
 
-## Option A — short, leads with the hook (recommended for the first post)
+## Option A — lead with name search (recommended)
+
+This is the hook. Everyone else's scam checker demands a contract address,
+which is precisely what the people being robbed do not have.
 
 ```
-Someone sends you a coin. Or a link. You have no idea if it's real.
+You don't need a contract address.
 
-SafeSign reads the code before you sign — and tells you the truth,
-not just "danger":
+Type the name of the coin.
 
-🔴 A real scam → do not sign
-🟡 Your stablecoin → here's what the owner CAN do (not a scam)
-🟢 Clean token → shows its work, not just a green tick
-⚪ Can't check it → says so, never guesses
+SafeSign finds every token using that name — because names aren't
+unique, and a scammer copying a real one is the oldest trick there is —
+then reads the actual code of the one you pick and tells you, in plain
+English, whether it's safe to approve.
 
 No wallet connection. Ever.
-Live, tested inside MiniPay on a real device:
-https://safesign-umber.vercel.app
 
-Built for the 18M+ wallets on MiniPay.
-```
-
-## Option B — leads with the differentiator (use if replying to a scam-story tweet, or after Option A has run)
-
-```
-Most "scam checkers" see a mint function or a freeze switch and scream DANGER.
-
-That's how you'd flag USDT. USDC. Every major stablecoin.
-
-SafeSign tells capability from proof: DANGER is reserved for facts —
-a listed scam, code that blocks everyone from selling. Everything else
-is disclosed, not accused.
-
-Read-only. No wallet access. Live:
 https://safesign-umber.vercel.app
 ```
 
-## Option C — thread version (pin this one)
+## Option B — lead with the honesty angle
+
+For a crypto-native audience, or as a reply to a scam-story thread.
+
+```
+Most scam checkers see a mint function or a freeze switch and scream
+DANGER.
+
+That's how you'd flag USDT. And USDC. And every major stablecoin.
+
+SafeSign separates what code CAN do from what's actually proven.
+DANGER is reserved for facts — a listed scam address, or code that
+stops everyone selling. Everything else is disclosed, not accused,
+and the decision stays yours.
+
+Read-only. No wallet access.
+https://safesign-umber.vercel.app
+```
+
+## Option C — the thread (pin this)
 
 ```
 1/
-Is this safe to sign?
+Someone sends you a coin. Or a link. You have no idea if it's real,
+and if you're wrong the money's gone.
 
-That's the whole app. Paste a token, a contract, or a link — get a
-plain-language answer before you approve anything.
+SafeSign answers one question: is this safe to sign?
 
-No wallet connection. Ever. [attach video]
+[attach video]
 
 2/
-Most scam checkers can't tell "the owner CAN freeze this" from "this
-IS a scam." That's the same bug that would flag USDT as dangerous —
-its owner really can freeze wallets and mint without limit.
+The part everyone else gets wrong: you need a contract address to use
+them.
 
-SafeSign separates proof from capability. Only proof gets you DANGER.
+Nobody outside a dev team has one. People have a NAME — "someone told
+me about BeanToken."
+
+So SafeSign takes the name.
 
 3/
-DANGER is reserved for facts: a listed scam address, or code that
-blocks everyone from selling — not just the owner.
+But names aren't unique. Search "bean" and you get several different
+tokens, different contracts, some of them copies riding a real name.
 
-Everything else is disclosed in plain language, with the decision
-handed back to you. Not a red flag machine.
+So it never picks one for you. It shows every match, with its chain,
+and you choose. Then it reads that contract.
 
 4/
-It also reads unverified contracts. Compiled bytecode still names its
-functions — so a drainer calling itself "SecurityUpdates" with no
-published source gets caught too, not just the ones with source code.
+Most checkers can't tell "the owner CAN freeze this" from "this IS a
+scam." Same bug that would flag USDT — its owner really can freeze
+wallets and mint without limit.
+
+DANGER is for proof. Everything else is disclosed, not accused.
 
 5/
-Tested live, inside MiniPay, on a real Android device, over a 20 KB/s
-connection. Not a demo environment — the actual in-app browser 18M+
-MiniPay wallets use.
+It also reads contracts with no published source. Compiled bytecode
+still names its functions — so a drainer calling itself
+"SecurityUpdates" gets caught even when there's no code to read.
 
 6/
-Deployed. Free. Read-only by design — it can never ask you to approve
-anything, because that's the exact habit it exists to interrupt.
+Tested inside MiniPay, on a real Android handset, over a 20 KB/s
+connection. The actual in-app browser 18M+ wallets use.
+
+Read-only by design — it can never ask you to approve anything,
+because that's the exact habit it exists to interrupt.
 
 https://safesign-umber.vercel.app
-
-Built by an auditor. Open source: https://github.com/luhrhenz/safesign
 ```
 
 ---
 
 ## Notes
 
-- **Lead with Option A.** It's the hook, and the video does the rest of the
-  work — don't over-explain in the caption.
-- **The video has no audio track worth relying on.** It's captioned and reads
-  fine muted, which is most of X's autoplay traffic anyway.
-- **Pin the thread (Option C)** once posted — it's the one worth a reviewer
-  reading top to bottom.
-- Tag `@Celo` / `@MiniPay` if you want it in front of the people who'd fund
-  it — do this deliberately, once, not on every post.
+- **Lead with Option A.** "You don't need a contract address" is the line that
+  separates this from every other scanner, and it speaks to the people who
+  actually get drained.
+- The video autoplays muted on X. It's captioned, so it reads fine silently —
+  but the first frame should be legible on its own.
+- **Pin Option C** once it's up. It's the one worth a grant reviewer reading
+  end to end.
+- Tag `@Celo` / `@MiniPay` deliberately, once — not on every post.
